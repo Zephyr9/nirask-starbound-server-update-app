@@ -1,2 +1,10 @@
 # nirask-starbound-server-update-app
-JBoss container including a web app for uploading server configuration files.
+Docker container for a Wildfly server that processes and verifies server configuration files that are uploaded on a web-facing frontend.
+
+The actual application that is running on this will require its own github directory, which means it will have its own deployment mechanism outside the scope of this server. If a capistrano daemon is needed to automate deployments of a JAR, that will be included in this docker container for use in outside development; if the JAR has a version update, the server's configuration doesn't necessarily need a version update.
+
+The forward-facing website (accessable over HTTPS, as these aren't expected to gain much traffic per node) should act as a live landing page for the server upload files. Each upload is required to have a text-based cryptokey / password submitted alongside it, for rudimentary security purposes. That key is generated and available in a file on the machine (to be specified), with only read permission for root. If a user has access to root on this machine, they have basically thoroughly compromised it anyway. This web interface will have a simple "waiting" functionality before reporting either a success or a failure, along with applicable error codes. This interface initially acts as a pass-through to put the uploaded file into a specific COLD import directory.
+
+The backend COLD import process will consume files by: 1) Determining their filetype (by name). 2) Verifying the file structure (in accordance to the game's configuration standards). 3) Moving the verified files to an appropriate starbound_build directory. This directory will be a shell starbound server installation, which contains only the configuration files in the correct places. Another daemon will handle the building and deploying of these server files into the starbound_server's file structure.
+
+A notification service will run as a runner between the web interface and the service. It triggers starts of the COLD import process, and it passes fail / success messages back to the interface's "waiting" bar. Let refreshing clear out these notifications.
